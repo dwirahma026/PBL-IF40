@@ -2,15 +2,65 @@ import 'package:flutter/material.dart';
 import 'package:parkir/utils/global.colors.dart';
 import 'package:parkir/view/daftar.view.dart';
 import 'package:parkir/view/homescreen.view.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LoginView extends StatelessWidget {
-  const LoginView({Key? key}) : super(key: key);
+class LoginView extends StatefulWidget {
+  @override
+  _LoginViewState createState() => _LoginViewState();
+}
+
+class _LoginViewState extends State<LoginView> {
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> login() async {
+    final username = _usernameController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Username dan password tidak boleh kosong')),
+      );
+      return;
+    }
+
+    try {
+      final userQuery =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('username', isEqualTo: username)
+              .limit(1)
+              .get();
+
+      if (userQuery.docs.isEmpty) {
+        throw 'Username tidak ditemukan';
+      }
+
+      final email = userQuery.docs.first['email'];
+
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Berhasil login')));
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Login gagal: $e')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController usernameController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
-
     return Scaffold(
       backgroundColor: GlobalColors.mainColor,
       body: SingleChildScrollView(
@@ -69,11 +119,11 @@ class LoginView extends StatelessWidget {
                 ),
                 const SizedBox(height: 30),
 
-                buildInputField("User Name", usernameController),
+                buildInputField('Username', _usernameController),
                 const SizedBox(height: 15),
                 buildInputField(
-                  "Password",
-                  passwordController,
+                  'Password',
+                  _passwordController,
                   isPassword: true,
                 ),
                 const SizedBox(height: 40),
@@ -81,16 +131,7 @@ class LoginView extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const HomeScreen(),
-                        ),
-                      );
-                      //print("Username: ${usernameController.text}");
-                      //print("Password: ${passwordController.text}");
-                    },
+                    onPressed: login,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber,
                       shape: RoundedRectangleBorder(

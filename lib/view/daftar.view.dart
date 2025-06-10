@@ -1,16 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:parkir/utils/global.colors.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class RegisterView extends StatelessWidget {
+class RegisterView extends StatefulWidget {
   const RegisterView({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final TextEditingController usernameController = TextEditingController();
-    final TextEditingController emailController = TextEditingController();
-    final TextEditingController phoneController = TextEditingController();
-    final TextEditingController passwordController = TextEditingController();
+  _RegisterViewState createState() => _RegisterViewState();
+}
 
+class _RegisterViewState extends State<RegisterView> {
+  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _usernameController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> register(BuildContext context) async {
+    try {
+      final authResult = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+      // Simpan data tambahan ke Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(authResult.user!.uid)
+          .set({
+            'username': _usernameController.text.trim(),
+            'email': _emailController.text.trim(),
+            'phone': _phoneController.text.trim(),
+          });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Pendaftaran berhasil')));
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GlobalColors.mainColor,
       body: SingleChildScrollView(
@@ -69,15 +114,15 @@ class RegisterView extends StatelessWidget {
                 ),
                 const SizedBox(height: 40),
 
-                buildInputField("User Name", usernameController),
+                buildInputField('User Name', _usernameController),
                 const SizedBox(height: 15),
-                buildInputField("Email", emailController),
+                buildInputField('Email', _emailController),
                 const SizedBox(height: 15),
-                buildInputField("Nomor Hp", phoneController),
+                buildInputField('Nomor Hp', _phoneController),
                 const SizedBox(height: 15),
                 buildInputField(
-                  "Password",
-                  passwordController,
+                  'Password',
+                  _passwordController,
                   isPassword: true,
                 ),
                 const SizedBox(height: 70),
@@ -86,10 +131,7 @@ class RegisterView extends StatelessWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      print("Username: ${usernameController.text}");
-                      print("Email: ${emailController.text}");
-                      print("Nomor Hp: ${phoneController.text}");
-                      print("Password: ${passwordController.text}");
+                      register(context);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.amber,
