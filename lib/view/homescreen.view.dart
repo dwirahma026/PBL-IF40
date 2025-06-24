@@ -1,8 +1,51 @@
 import 'package:flutter/material.dart';
+import 'booking1.dart';
 import 'package:parkir/utils/global.colors.dart';
+import 'riwayat.dart';
+import 'profile.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int currentIndex = 0;
+
+  final List<Widget> pages = const [
+    HomeContent(),
+    RiwayatPage(),
+    ProfileScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: pages[currentIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.black54,
+        backgroundColor: Colors.amber,
+        onTap: (index) {
+          setState(() {
+            currentIndex = index;
+          });
+        },
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: ''),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+        ],
+      ),
+    );
+  }
+}
+
+class HomeContent extends StatelessWidget {
+  const HomeContent({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const Icon(Icons.notifications, size: 30),
+                      const Icon(Icons.notifications, size: 40),
                     ],
                   ),
                 ),
@@ -54,104 +97,69 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 40),
-                  padding: const EdgeInsets.all(100),
+                  margin: const EdgeInsets.symmetric(horizontal: 30),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 30,
+                  ),
                   decoration: BoxDecoration(
                     color: const Color(0xFFE0E0E0),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Column(
                     children: [
-                      Transform.translate(
-                        offset: Offset(0, -70),
-                        child: Image.asset(
-                          'assets/images/logo parkiryukk.png',
-                          width: 150,
-                          height: 150,
-                        ),
+                      const SizedBox(height: 40),
+                      Image.asset(
+                        'assets/images/logo parkiryukk.png',
+                        width: 150,
+                        height: 150,
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 50),
                       const Text(
                         'Anda\nSedang\nTidak\nParkir ...',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 30,
                           fontFamily: 'Alike',
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 20),
-
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 3),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton(
-                              onPressed: () {
-                                print("Scan");
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                ),
+                      const SizedBox(height: 100),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const Booking1(),
                               ),
-                              child: const Text(
-                                'Pindai Untuk Masuk',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black,
-                                  fontFamily: 'Alike',
-                                ),
-                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
                             ),
-                            const SizedBox(width: 10),
-                            ElevatedButton(
-                              onPressed: () {
-                                print("Booking");
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.amber,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 30,
-                                ),
-                              ),
-                              child: const Text(
-                                'Booking Tempat Parkir',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.black,
-                                  fontFamily: 'Alike',
-                                ),
-                              ),
+                          ),
+                          child: const Text(
+                            "Booking Tempat Parkir",
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.black,
+                              fontFamily: 'Alike',
                             ),
-                          ],
+                          ),
                         ),
                       ),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
-
-      bottomNavigationBar: BottomNavigationBar(
-        selectedItemColor: Colors.black,
-        unselectedItemColor: Colors.black54,
-        backgroundColor: Colors.amber,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
         ],
       ),
     );

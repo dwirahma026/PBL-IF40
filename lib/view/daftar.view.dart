@@ -1,164 +1,154 @@
 import 'package:flutter/material.dart';
-import 'package:parkir/utils/global.colors.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:parkir/utils/global.colors.dart';
+import 'package:parkir/view/masuk.view.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({Key? key}) : super(key: key);
 
   @override
-  _RegisterViewState createState() => _RegisterViewState();
+  State<RegisterView> createState() => _RegisterViewState();
 }
 
 class _RegisterViewState extends State<RegisterView> {
-  final _emailController = TextEditingController();
   final _usernameController = TextEditingController();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _noHpController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _usernameController.dispose();
-    _phoneController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
+  bool _isLoading = false;
 
-  Future<void> register(BuildContext context) async {
+  Future<void> register() async {
+    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
+    final noHp = _noHpController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (username.isEmpty || email.isEmpty || noHp.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Semua field wajib diisi.")));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
     try {
       final authResult = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
+          .createUserWithEmailAndPassword(email: email, password: password);
 
-      // Simpan data tambahan ke Firestore
       await FirebaseFirestore.instance
           .collection('users')
           .doc(authResult.user!.uid)
           .set({
-            'username': _usernameController.text.trim(),
-            'email': _emailController.text.trim(),
-            'phone': _phoneController.text.trim(),
+            'id': authResult.user!.uid,
+            'username': username,
+            'email': email,
+            'no_hp': noHp,
+            'created_at': DateTime.now(),
           });
 
-      ScaffoldMessenger.of(
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registrasi berhasil! Silakan login.')),
+      );
+
+      Navigator.pushReplacement(
         context,
-      ).showSnackBar(SnackBar(content: Text('Pendaftaran berhasil')));
-      Navigator.pop(context);
+        MaterialPageRoute(builder: (_) => LoginView()),
+      );
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      ).showSnackBar(SnackBar(content: Text('Registrasi gagal: $e')));
     }
+
+    setState(() => _isLoading = false);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: GlobalColors.mainColor,
-      body: SingleChildScrollView(
-        child: SafeArea(
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(50.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mulai',
-                            style: TextStyle(
-                              color: GlobalColors.textColor,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Alike',
-                            ),
-                          ),
-                          Text(
-                            'Bergabung!!',
-                            style: TextStyle(
-                              color: GlobalColors.textColor,
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Alike',
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Masukkan datamu untuk membuat akun baru.',
-                            style: TextStyle(
-                              color: GlobalColors.textColor,
-                              fontSize: 14,
-                              fontFamily: 'Alike',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Image.asset(
-                      'assets/images/logo parkiryukk.png',
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                    ),
-                  ],
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
+              Text(
+                "Buat Akun Baru",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Alike',
                 ),
-                const SizedBox(height: 40),
+              ),
+              const SizedBox(height: 30),
 
-                buildInputField('User Name', _usernameController),
-                const SizedBox(height: 15),
-                buildInputField('Email', _emailController),
-                const SizedBox(height: 15),
-                buildInputField('Nomor Hp', _phoneController),
-                const SizedBox(height: 15),
-                buildInputField(
-                  'Password',
-                  _passwordController,
-                  isPassword: true,
-                ),
-                const SizedBox(height: 70),
+              buildInput("Username", _usernameController),
+              const SizedBox(height: 15),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      register(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text(
-                      "Daftar",
-                      style: TextStyle(
-                        fontSize: 25,
-                        color: Colors.black,
-                        fontFamily: 'Alike',
-                      ),
+              buildInput("Email", _emailController),
+              const SizedBox(height: 15),
+
+              buildInput("Nomor HP", _noHpController),
+              const SizedBox(height: 15),
+
+              buildInput("Password", _passwordController, isPassword: true),
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(50),
                     ),
                   ),
+                  child:
+                      _isLoading
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : const Text(
+                            "Daftar",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.black,
+                              fontFamily: 'Alike',
+                            ),
+                          ),
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Sudah punya akun?"),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => LoginView()),
+                      );
+                    },
+                    child: const Text("Login di sini"),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget buildInputField(
+  Widget buildInput(
     String label,
     TextEditingController controller, {
     bool isPassword = false,
@@ -168,11 +158,7 @@ class _RegisterViewState extends State<RegisterView> {
       obscureText: isPassword,
       decoration: InputDecoration(
         hintText: label,
-        hintStyle: const TextStyle(
-          fontFamily: 'Alike',
-          fontSize: 18,
-          color: Color.fromARGB(255, 117, 117, 117),
-        ),
+        hintStyle: const TextStyle(fontFamily: 'Alike', fontSize: 16),
         filled: true,
         fillColor: GlobalColors.mainColor,
         contentPadding: const EdgeInsets.symmetric(
@@ -181,7 +167,15 @@ class _RegisterViewState extends State<RegisterView> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(50),
-          borderSide: const BorderSide(color: Colors.black, width: 20),
+          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(50),
+          borderSide: const BorderSide(color: Colors.black, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(50),
+          borderSide: const BorderSide(color: Colors.black, width: 2),
         ),
       ),
     );

@@ -3,7 +3,6 @@ import 'package:parkir/utils/global.colors.dart';
 import 'package:parkir/view/daftar.view.dart';
 import 'package:parkir/view/homescreen.view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginView extends StatefulWidget {
   @override
@@ -11,34 +10,21 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final _usernameController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   Future<void> login() async {
-    final username = _usernameController.text.trim();
+    final email = _emailController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Username dan password tidak boleh kosong')),
+        const SnackBar(content: Text('Email dan password tidak boleh kosong')),
       );
       return;
     }
 
     try {
-      final userQuery =
-          await FirebaseFirestore.instance
-              .collection('users')
-              .where('username', isEqualTo: username)
-              .limit(1)
-              .get();
-
-      if (userQuery.docs.isEmpty) {
-        throw 'Username tidak ditemukan';
-      }
-
-      final email = userQuery.docs.first['email'];
-
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
@@ -46,7 +32,7 @@ class _LoginViewState extends State<LoginView> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Berhasil login')));
+      ).showSnackBar(const SnackBar(content: Text('Berhasil login')));
 
       Navigator.pushReplacement(
         context,
@@ -99,7 +85,7 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           const SizedBox(height: 15),
                           Text(
-                            'Masukkan Username dan Password yang sudah kamu Daftarkan ya!!',
+                            'Masukkan Email dan Password kamu!',
                             style: TextStyle(
                               color: GlobalColors.textColor,
                               fontSize: 14,
@@ -119,7 +105,7 @@ class _LoginViewState extends State<LoginView> {
                 ),
                 const SizedBox(height: 30),
 
-                buildInputField('Username', _usernameController),
+                buildInputField('Email', _emailController),
                 const SizedBox(height: 15),
                 buildInputField(
                   'Password',
