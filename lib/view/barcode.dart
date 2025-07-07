@@ -1,54 +1,70 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'booking1.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:parkir/utils/global.colors.dart';
-import 'riwayat.dart';
-import 'profile.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+class BarcodePage extends StatefulWidget {
+  final String bookingId;
+  const BarcodePage({super.key, required this.bookingId});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  State<BarcodePage> createState() => _BarcodePageState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  int currentIndex = 0;
-
-  final List<Widget> pages = const [
-    HomeContent(),
-    RiwayatPage(),
-    ProfileScreen(),
-  ];
+class _BarcodePageState extends State<BarcodePage> {
+  Map<String, dynamic>? bookingData;
+  bool isLoading = true;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: pages[currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.black54,
-        backgroundColor: Colors.amber,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
-        ],
-      ),
-    );
+  void initState() {
+    super.initState();
+    loadBooking();
   }
-}
 
-class HomeContent extends StatelessWidget {
-  const HomeContent({super.key});
+  Future<void> loadBooking() async {
+    final doc =
+        await FirebaseFirestore.instance
+            .collection('bookings')
+            .doc(widget.bookingId)
+            .get();
+
+    if (doc.exists) {
+      setState(() {
+        bookingData = doc.data();
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> batalBooking() async {
+    await FirebaseFirestore.instance
+        .collection('bookings')
+        .doc(widget.bookingId)
+        .update({
+          'status': 'dibatalkan',
+          'status_pembayaran': 'dibatalkan',
+          'updated_at': Timestamp.now(),
+        });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Booking dibatalkan')));
+
+    Navigator.pop(context);
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading || bookingData == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    final qrData = bookingData!['booking_id'];
+    final lokasi = bookingData!['lokasi'] ?? '-';
+    final gate = bookingData!['gate'] ?? '-';
+    final sesi = (bookingData!['sesi'] as List?)?.join(', ') ?? '-';
+
     return Scaffold(
       backgroundColor: GlobalColors.mainColor,
       body: Stack(
@@ -115,41 +131,30 @@ class HomeContent extends StatelessWidget {
                         height: 150,
                       ),
                       const SizedBox(height: 50),
-                      const Text(
-                        'Anda\nSedang\nTidak\nParkir ...',
+                      QrImageView(
+                        data: qrData,
+                        version: QrVersions.auto,
+                        size: 200,
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        "Lokasi: $lokasi\nGate: $gate\nSesi: $sesi",
                         textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontFamily: 'Alike',
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: const TextStyle(fontSize: 16),
                       ),
                       const SizedBox(height: 100),
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const Booking1(),
-                              ),
-                            );
-                          },
+                          onPressed: batalBooking,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.amber,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50),
-                            ),
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.all(15),
                           ),
                           child: const Text(
-                            "Booking Tempat Parkir",
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.black,
-                              fontFamily: 'Alike',
-                            ),
+                            'Batal Booking',
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ),

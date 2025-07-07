@@ -72,5 +72,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'yukparkir-ead06.firebasestorage.app',
     iosBundleId: 'com.example.parkir',
   );
-
 }
