@@ -257,11 +257,7 @@ packages:
     source: hosted
     version: "3.0.1"
   http:
-<<<<<<< HEAD
     dependency: "direct main"
-=======
-    dependency: transitive
->>>>>>> b1b37c5d30263772fa15d1f70a1ae0adb817b990
     description:
       name: http
       sha256: "2c11f3f94c687ee9bad77c171151672986360b2b001d109814ee7140b2cf261b"
@@ -513,7 +509,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-<<<<<<< HEAD
   url_launcher:
     dependency: "direct main"
     description:
@@ -578,8 +573,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.1.4"
-=======
->>>>>>> b1b37c5d30263772fa15d1f70a1ae0adb817b990
   uuid:
     dependency: "direct main"
     description:
