@@ -1,8 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'pembayaran.dart';
 import 'package:parkir/utils/global.colors.dart';
+import 'pembayaran.dart';
+import 'package:uuid/uuid.dart';
 
 class Booking3 extends StatefulWidget {
   final String lokasi;
@@ -35,12 +36,23 @@ class _Booking3State extends State<Booking3> {
 
   void toggleSesi(String sesi) {
     setState(() {
-      if (sesiDipilih.contains(sesi)) {
-        sesiDipilih.remove(sesi);
-      } else {
-        sesiDipilih.add(sesi);
-      }
+      sesiDipilih.contains(sesi)
+          ? sesiDipilih.remove(sesi)
+          : sesiDipilih.add(sesi);
     });
+  }
+
+  DateTime _latestEndTime(List<String> list) {
+    final now = DateTime.now();
+    DateTime latest = now;
+    for (final s in list) {
+      final endStr = s.split(' - ').last;
+      final h = int.parse(endStr.split(':')[0]);
+      final m = int.parse(endStr.split(':')[1]);
+      final candidate = DateTime(now.year, now.month, now.day, h, m);
+      if (candidate.isAfter(latest)) latest = candidate;
+    }
+    return latest;
   }
 
   Future<void> simpanBooking() async {
@@ -55,23 +67,27 @@ class _Booking3State extends State<Booking3> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw 'User tidak login';
 
-      final bookingDoc =
-          FirebaseFirestore.instance.collection('bookings').doc();
+      final bookingId = const Uuid().v4();
+      final endAt = _latestEndTime(sesiDipilih);
 
-      await bookingDoc.set({
-        'booking_id': bookingDoc.id,
-        'user_id': user.uid,
-        'lokasi': widget.lokasi,
-        'gate': widget.namaGate,
-        'gate_id': widget.gateId,
-        'area': widget.area,
-        'sesi': sesiDipilih,
-        'total_harga': totalHarga,
-        'status_pembayaran': 'belum bayar',
-        'status': 'pending',
-        'tanggal_booking': DateTime.now().toIso8601String(),
-        'created_at': Timestamp.now(),
-      });
+      await FirebaseFirestore.instance
+          .collection('bookings')
+          .doc(bookingId)
+          .set({
+            'booking_id': bookingId,
+            'user_id': user.uid,
+            'lokasi': widget.lokasi,
+            'gate': widget.namaGate,
+            'gate_id': widget.gateId,
+            'area': widget.area,
+            'sesi': sesiDipilih,
+            'total_harga': totalHarga,
+            'status_pembayaran': 'belum bayar',
+            'status': 'pending',
+            'end_at': Timestamp.fromDate(endAt),
+            'tanggal_booking': DateTime.now().toIso8601String(),
+            'created_at': Timestamp.now(),
+          });
 
       await FirebaseFirestore.instance
           .collection('parking_gates')
@@ -80,9 +96,7 @@ class _Booking3State extends State<Booking3> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(
-          builder: (_) => PembayaranPage(bookingId: bookingDoc.id),
-        ),
+        MaterialPageRoute(builder: (_) => PembayaranPage(bookingId: bookingId)),
       );
     } catch (e) {
       ScaffoldMessenger.of(
@@ -115,10 +129,10 @@ class _Booking3State extends State<Booking3> {
             ),
             const SizedBox(height: 10),
             ...sesiTersedia.map(
-              (sesi) => CheckboxListTile(
-                title: Text(sesi),
-                value: sesiDipilih.contains(sesi),
-                onChanged: (_) => toggleSesi(sesi),
+              (s) => CheckboxListTile(
+                title: Text(s),
+                value: sesiDipilih.contains(s),
+                onChanged: (_) => toggleSesi(s),
               ),
             ),
             const SizedBox(height: 20),

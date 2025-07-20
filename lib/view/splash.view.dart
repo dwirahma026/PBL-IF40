@@ -19,7 +19,7 @@ class SplashView extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
             Image.asset(
-              'assets/images/logo parkiryukk.png',
+              'assets/images/logo_parkiryukk.png',
               width: 150,
               height: 150,
               fit: BoxFit.cover,

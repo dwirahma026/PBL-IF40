@@ -1,17 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:parkir/utils/global.colors.dart';
 import 'booking2.dart';
 
-class Booking1 extends StatelessWidget {
+class Booking1 extends StatefulWidget {
   const Booking1({Key? key}) : super(key: key);
 
-  final List<String> lokasiList = const [
-    "Mega Mall",
-    "Grand Mall",
-    "One Mall",
-    "BCS",
-  ];
+  @override
+  State<Booking1> createState() => _Booking1State();
+}
 
+class _Booking1State extends State<Booking1> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +40,7 @@ class Booking1 extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Image.asset(
-                        'assets/images/logo parkiryukk.png',
+                        'assets/images/logo_parkiryukk.png',
                         width: 40,
                         height: 40,
                       ),
@@ -72,16 +71,38 @@ class Booking1 extends StatelessWidget {
                     children: [
                       const SizedBox(height: 20),
                       Image.asset(
-                        'assets/images/logo parkiryukk.png',
+                        'assets/images/logo_parkiryukk.png',
                         width: 150,
                         height: 150,
                       ),
                       const SizedBox(height: 20),
-                      Column(
-                        children:
-                            lokasiList
-                                .map(
-                                  (lokasi) => Padding(
+                      StreamBuilder<QuerySnapshot>(
+                        stream:
+                            FirebaseFirestore.instance
+                                .collection('parking_gates')
+                                .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const CircularProgressIndicator();
+                          }
+
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return const Text("Belum ada lokasi tersedia");
+                          }
+
+                          List<String> allLokasi =
+                              snapshot.data!.docs
+                                  .map((doc) => doc['lokasi'] as String)
+                                  .toList();
+
+                          List<String> lokasiUnik = allLokasi.toSet().toList();
+
+                          return Column(
+                            children:
+                                lokasiUnik.map((lokasi) {
+                                  return Padding(
                                     padding: const EdgeInsets.only(
                                       bottom: 15.0,
                                     ),
@@ -118,9 +139,10 @@ class Booking1 extends StatelessWidget {
                                         ),
                                       ),
                                     ),
-                                  ),
-                                )
-                                .toList(),
+                                  );
+                                }).toList(),
+                          );
+                        },
                       ),
                     ],
                   ),

@@ -123,7 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: Row(
                     children: [
                       Image.asset(
-                        'assets/images/logo parkiryukk.png',
+                        'assets/images/logo_parkiryukk.png',
                         width: 40,
                         height: 40,
                       ),

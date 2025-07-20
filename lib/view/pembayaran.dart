@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:parkir/utils/global.colors.dart';
-import 'barcode.dart';
+import 'homescreen.view.dart';
 
 class PembayaranPage extends StatefulWidget {
   final String bookingId;
@@ -53,9 +53,7 @@ class _PembayaranPageState extends State<PembayaranPage> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(
-        builder: (_) => BarcodePage(bookingId: widget.bookingId),
-      ),
+      MaterialPageRoute(builder: (_) => const HomeScreen()),
     );
   }
 

@@ -2,21 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class RiwayatPage extends StatefulWidget {
+class RiwayatPage extends StatelessWidget {
   const RiwayatPage({super.key});
 
   @override
-  State<RiwayatPage> createState() => _RiwayatPageState();
-}
-
-class _RiwayatPageState extends State<RiwayatPage> {
-  final userId = FirebaseAuth.instance.currentUser?.uid;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8F8F8),
-      body: Stack(
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: kBottomNavigationBarHeight),
+      child: Stack(
         children: [
           Container(
             height: 250,
@@ -29,7 +24,6 @@ class _RiwayatPageState extends State<RiwayatPage> {
               ),
             ),
           ),
-
           SafeArea(
             child: Column(
               children: [
@@ -44,23 +38,34 @@ class _RiwayatPageState extends State<RiwayatPage> {
                       Image.asset(
                         'assets/images/logo parkiryukk.png',
                         width: 40,
-                        height: 40,
                       ),
-                      const Text(
-                        'Username',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontFamily: 'Alike',
-                          fontWeight: FontWeight.bold,
-                        ),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream:
+                            FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .snapshots(),
+                        builder: (context, snap) {
+                          final uname =
+                              snap.hasData
+                                  ? (snap.data!.data() as Map)['username'] ??
+                                      'Username'
+                                  : 'Username';
+                          return Text(
+                            uname,
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'Alike',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          );
+                        },
                       ),
-                      const Icon(Icons.notifications, size: 40),
+                      Icon(Icons.notifications, size: 40),
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 Expanded(
                   child: Container(
                     width: double.infinity,
@@ -77,81 +82,68 @@ class _RiwayatPageState extends State<RiwayatPage> {
                         ),
                       ],
                     ),
-                    child:
-                        userId == null
-                            ? const Center(child: Text("User belum login"))
-                            : StreamBuilder<QuerySnapshot>(
-                              stream:
-                                  FirebaseFirestore.instance
-                                      .collection('bookings')
-                                      .where('user_id', isEqualTo: userId)
-                                      .where(
-                                        'status_pembayaran',
-                                        isEqualTo: 'sudah bayar',
-                                      )
-                                      .orderBy('created_at', descending: true)
-                                      .snapshots(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState ==
-                                    ConnectionState.waiting) {
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
-                                  );
-                                }
-
-                                final docs = snapshot.data?.docs ?? [];
-
-                                return ListView(
-                                  children: [
-                                    const SizedBox(height: 10),
-                                    Image.asset(
-                                      'assets/images/logo parkiryukk.png',
-                                      width: 150,
-                                      height: 150,
-                                    ),
-                                    const SizedBox(height: 20),
-
-                                    if (docs.isEmpty)
-                                      const Center(
-                                        child: Text(
-                                          'Belum ada riwayat booking.',
-                                        ),
-                                      ),
-
-                                    ...docs.map((doc) {
-                                      final data =
-                                          doc.data() as Map<String, dynamic>;
-                                      final tanggal =
-                                          (data['tanggal_booking'] as String?)
-                                              ?.split('T')
-                                              .first ??
-                                          '-';
-                                      final lokasi = data['lokasi'] ?? '-';
-                                      final area = data['area'] ?? '-';
-                                      final harga =
-                                          data['total_harga'] != null
-                                              ? 'Rp ${data['total_harga']}'
-                                              : '-';
-                                      final status =
-                                          data['status_pembayaran'] ?? '-';
-
-                                      return Column(
-                                        children: [
-                                          buildRiwayatItem(
-                                            tanggal: tanggal,
-                                            tempat: lokasi,
-                                            area: area,
-                                            harga: harga,
-                                            status: status,
+                    child: Column(
+                      children: [
+                        Image.asset(
+                          'assets/images/logo_parkiryukk.png',
+                          width: 150,
+                          height: 150,
+                        ),
+                        const SizedBox(height: 20),
+                        Expanded(
+                          child:
+                              userId == null
+                                  ? const Center(
+                                    child: Text('User belum login'),
+                                  )
+                                  : StreamBuilder<QuerySnapshot>(
+                                    stream:
+                                        FirebaseFirestore.instance
+                                            .collection('bookings')
+                                            .where('user_id', isEqualTo: userId)
+                                            .where(
+                                              'status_pembayaran',
+                                              isEqualTo: 'sudah bayar',
+                                            )
+                                            .orderBy(
+                                              'created_at',
+                                              descending: true,
+                                            )
+                                            .snapshots(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.connectionState ==
+                                          ConnectionState.waiting) {
+                                        return const Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      }
+                                      final docs = snapshot.data?.docs ?? [];
+                                      if (docs.isEmpty) {
+                                        return const Center(
+                                          child: Text(
+                                            'Belum ada riwayat booking.',
                                           ),
-                                          const Divider(thickness: 1),
-                                        ],
+                                        );
+                                      }
+                                      return ListView(
+                                        children:
+                                            docs.map((doc) {
+                                              final data =
+                                                  doc.data()
+                                                      as Map<String, dynamic>;
+                                              return Column(
+                                                children: [
+                                                  _buildItem(data),
+                                                  const Divider(thickness: 1),
+                                                ],
+                                              );
+                                            }).toList(),
                                       );
-                                    }).toList(),
-                                  ],
-                                );
-                              },
-                            ),
+                                    },
+                                  ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -162,27 +154,29 @@ class _RiwayatPageState extends State<RiwayatPage> {
     );
   }
 
-  Widget buildRiwayatItem({
-    required String tanggal,
-    required String tempat,
-    required String area,
-    required String harga,
-    required String status,
-  }) {
+  Widget _buildItem(Map<String, dynamic> data) {
+    final tanggal =
+        (data['tanggal_booking'] as String?)?.split('T').first ?? '-';
+    final lokasi = data['lokasi'] ?? '-';
+    final area = data['area'] ?? '-';
+    final harga =
+        data['total_harga'] != null ? 'Rp ${data['total_harga']}' : '-';
+    final status = data['status_pembayaran'] ?? '-';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        infoRow("Tanggal", tanggal),
-        infoRow("Tempat", tempat),
-        infoRow("Kendaraan", area),
-        infoRow("Harga", harga),
-        infoRow("Status", status),
+        _row('Tanggal', tanggal),
+        _row('Tempat', lokasi),
+        _row('Kendaraan', area),
+        _row('Harga', harga),
+        _row('Status', status),
         const SizedBox(height: 10),
       ],
     );
   }
 
-  Widget infoRow(String label, String value) {
+  Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
@@ -194,7 +188,7 @@ class _RiwayatPageState extends State<RiwayatPage> {
               style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
             ),
           ),
-          const Text(" : "),
+          const Text(' : '),
           Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
         ],
       ),
